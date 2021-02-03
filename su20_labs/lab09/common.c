@@ -53,9 +53,23 @@ long long int sum_simd(unsigned int vals[NUM_ELEMS]) {
 	
 	for(unsigned int w = 0; w < OUTER_ITERATIONS; w++) {
 		/* YOUR CODE GOES HERE */
-
+		__m128i inner_sum = _mm_setzero_si128();
+		unsigned int inner_result[4];
+		unsigned int i;
+		for(i = 0; i + 4 <= NUM_ELEMS; i += 4) {
+			__m128i curr = _mm_loadu_si128((__m128i *) &vals[i]);
+			__m128i cmp = _mm_cmpgt_epi32(curr, _127);
+			curr = _mm_and_si128(curr, cmp); 
+			inner_sum = _mm_add_epi32(inner_sum, curr);
+		}
+		_mm_storeu_si128((__m128i *) &inner_result[0], inner_sum);
+		for (unsigned int j = 0; j < 4; j++) {
+			result += inner_result[j];
+		}
+		for (; i < NUM_ELEMS; i++) {
+			if (vals[i] >= 128) result += vals[i];
+		}
 		/* You'll need a tail case. */
-
 	}
 	clock_t end = clock();
 	printf("Time taken: %Lf s\n", (long double)(end - start) / CLOCKS_PER_SEC);
@@ -69,7 +83,38 @@ long long int sum_simd_unrolled(unsigned int vals[NUM_ELEMS]) {
 	for(unsigned int w = 0; w < OUTER_ITERATIONS; w++) {
 		/* COPY AND PASTE YOUR sum_simd() HERE */
 		/* MODIFY IT BY UNROLLING IT */
-
+		__m128i inner_sum = _mm_setzero_si128();
+		unsigned int inner_result[4];
+		unsigned int i;
+		for(i = 0; i + 16 <= NUM_ELEMS; i += 16) {
+			// 1
+			__m128i curr = _mm_loadu_si128((__m128i *) &vals[i]);
+			__m128i cmp = _mm_cmpgt_epi32(curr, _127);
+			curr = _mm_and_si128(curr, cmp); 
+			inner_sum = _mm_add_epi32(inner_sum, curr);
+			// 2
+			curr = _mm_loadu_si128((__m128i *) &vals[i+4]);
+			cmp = _mm_cmpgt_epi32(curr, _127);
+			curr = _mm_and_si128(curr, cmp); 
+			inner_sum = _mm_add_epi32(inner_sum, curr);
+			// 3
+			curr = _mm_loadu_si128((__m128i *) &vals[i+8]);
+			cmp = _mm_cmpgt_epi32(curr, _127);
+			curr = _mm_and_si128(curr, cmp); 
+			inner_sum = _mm_add_epi32(inner_sum, curr);
+			// 4
+			curr = _mm_loadu_si128((__m128i *) &vals[i+12]);
+			cmp = _mm_cmpgt_epi32(curr, _127);
+			curr = _mm_and_si128(curr, cmp); 
+			inner_sum = _mm_add_epi32(inner_sum, curr);
+		}
+		_mm_storeu_si128((__m128i *) &inner_result[0], inner_sum);
+		for (unsigned int j = 0; j < 4; j++) {
+			result += inner_result[j];
+		}
+		for (; i < NUM_ELEMS; i++) {
+			if (vals[i] >= 128) result += vals[i];
+		}
 		/* You'll need 1 or maybe 2 tail cases here. */
 
 	}
