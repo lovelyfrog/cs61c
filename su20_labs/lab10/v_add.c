@@ -16,19 +16,30 @@ void v_add_naive(double* x, double* y, double* z) {
 
 // Edit this function (Method 1) 
 void v_add_optimized_adjacent(double* x, double* y, double* z) {
+	int thread_num = omp_get_num_threads();
      #pragma omp parallel
 	{
-		for(int i=0; i<ARRAY_SIZE; i++)
-			z[i] = x[i] + y[i];
+		for(int i=0; i<ARRAY_SIZE; i++) {
+			int curr_thread = omp_get_thread_num();
+			if (i % thread_num == curr_thread) z[i] = x[i] + y[i];
+		}
 	}
 }
 
 // Edit this function (Method 2) 
 void v_add_optimized_chunks(double* x, double* y, double* z) {
-          #pragma omp parallel
+    #pragma omp parallel
 	{
-		for(int i=0; i<ARRAY_SIZE; i++)
+		int thread_num = omp_get_num_threads();
+		int block_size = ARRAY_SIZE / thread_num;
+		int remain = ARRAY_SIZE - block_size * thread_num;
+		int curr_thread = omp_get_thread_num();
+		for(int i=block_size * curr_thread; i<block_size * (curr_thread + 1); i++)
 			z[i] = x[i] + y[i];
+		if (curr_thread == thread_num - 1 && remain > 0) {
+			for (int i = block_size * thread_num; i < ARRAY_SIZE; i++)
+				z[i] = x[i] + y[i];
+		}
 	}
 }
 
@@ -64,18 +75,18 @@ int main() {
 	int num_threads = omp_get_max_threads();	
 
 
-	for(int i=1; i<=num_threads; i++) {
-		omp_set_num_threads(i);		
-	  start_time = omp_get_wtime();
-		for(int j=0; j<REPEAT; j++)
-			v_add_optimized_adjacent(x,y,z);
-		run_time = omp_get_wtime() - start_time;
-    if(!verify(x,y, v_add_optimized_adjacent)){
-      printf("v_add optimized adjacent does not match oracle\n");
-      return -1; 
-    }
-    printf("Optimized adjacent: %d thread(s) took %f seconds\n",i,run_time);
-  }
+// 	for(int i=1; i<=num_threads; i++) {
+// 		omp_set_num_threads(i);		
+// 	  start_time = omp_get_wtime();
+// 		for(int j=0; j<REPEAT; j++)
+// 			v_add_optimized_adjacent(x,y,z);
+// 		run_time = omp_get_wtime() - start_time;
+//     if(!verify(x,y, v_add_optimized_adjacent)){
+//       printf("v_add optimized adjacent does not match oracle\n");
+//       return -1; 
+//     }
+//     printf("Optimized adjacent: %d thread(s) took %f seconds\n",i,run_time);
+//   }
 
 
 	for(int i=1; i<=num_threads; i++) {

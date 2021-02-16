@@ -3,7 +3,7 @@
 #include <math.h>
 #include <omp.h>
 
-int array_size = 10000000;
+int array_size = 1000000;
 
 #include "omp_apps.h"
 
